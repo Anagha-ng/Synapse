@@ -1,0 +1,30 @@
+#include <stdio.h>
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "esp_log.h"
+#include "mpu9250.h"
+
+static const char *TAG = "MAIN";
+
+void app_main(void)
+{
+    esp_err_t r = mpu9250_init();
+    if (r != ESP_OK) {
+        ESP_LOGE(TAG, "MPU init failed: %s", esp_err_to_name(r));
+        while (1) vTaskDelay(pdMS_TO_TICKS(1000));
+    }
+
+    mpu9250_data_t d;
+    while (1) {
+        if (mpu9250_read_accel_gyro(&d) == ESP_OK) {
+            ESP_LOGI(TAG, "AX=%.3fg AY=%.3fg AZ=%.3fg  GX=%.2fdps GY=%.2fdps GZ=%.2fdps",
+                     d.ax, d.ay, d.az, d.gx, d.gy, d.gz);
+        } else {
+            ESP_LOGW(TAG, "Read failed");
+        }
+        vTaskDelay(pdMS_TO_TICKS(200));
+    }
+
+    // never reached in this demo
+    mpu9250_deinit();
+}
